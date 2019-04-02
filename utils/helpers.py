@@ -10,7 +10,7 @@ from requests.exceptions import ConnectTimeout, ConnectionError
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
-from utils.exceptions import JalBotError
+from utils.exceptions import JockBotException
 
 
 class JalBotRequestsException(Exception):
@@ -25,7 +25,7 @@ def setup_logger():
     :return:
     """
     log_level = "INFO"
-    logfile = 'log/jalbot.log'
+    logfile = 'log/jockbot.log'
     log_format = "{asctime} | {levelname} | {module}.{funcName}:{lineno} | {message}"
 
     formatter = logging.Formatter(log_format, style='{')
@@ -64,7 +64,7 @@ def get_config(config_file):
     Get configuration for command
     :return:
     """
-    with open('/jalbot/config/{}'.format(config_file), 'r') as f:
+    with open('/jockbot/utils/config/{}'.format(config_file), 'r') as f:
         config = json.load(f)
     if 'env' not in config.keys():
         config['env'] = None

@@ -1,0 +1,10 @@
+{
+  "commands": {
+    "cmds": ["scores", "news", "standings", "stats"],
+    "alt_names": {
+      "sp": "sports"
+    }
+  },
+  "bot_names": ["jockbot"],
+  "env": ["JAL_SLACK_TOKEN"]
+}

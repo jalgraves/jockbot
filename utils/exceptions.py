@@ -1,13 +1,9 @@
-class JalBotError(Exception):
-    """base class for JalBot errors"""
+class JockBotException(Exception):
+    """Base class for jockbot exceptions"""
     pass
 
 
-class JalBotExampleError(JalBotError):
-    """base class for JalBot Example errors"""
-    pass
-
-class NHLException(JalBotError):
+class NHLException(JockBotException):
     """Base class for NHL exceptions"""
     pass
 

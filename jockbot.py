@@ -4,7 +4,7 @@ import time
 
 from libs import slack
 
-from utils.BotTools import setup_logger
+from utils.helpers import setup_logger
 
 
 class JockBot(object):
@@ -28,21 +28,12 @@ class JockBot(object):
             self.slack.api_connect()
 
 def main():
-    """
-    Main function run when called from command line
-
-    :return:
-    """
+    """Main function run when called from command line"""
     setup_logger()
-    token = os.environ.get('JOCKBOT_SLACK_TOKEN')
+    token = os.environ.get('JAL_SLACK_TOKEN')
     jockbot = JockBot(token)
-    logging.info('starting jockbot')
-    try:
-        output = jockbot.slackbot()
-    except Exception as err:
-        logging.error(f"JOCKBOT main() EXCEPTION\n{err}")
-        time.sleep(2)
-        output = jockbot.slackbot()
+    logging.info('Starting JockBot')
+    output = jockbot.slackbot()
     if output:
         print(output)
 

@@ -7,7 +7,7 @@ import time
 
 from bs4 import BeautifulSoup
 
-# from utils.BotTools import get_config
+# from utils.helpers import get_config
 def get_config(config_file):
     """
     Get configuration for command

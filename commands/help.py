@@ -1,4 +1,4 @@
-from utils.BotTools import get_config
+from utils.helpers import get_config
 
 
 class BotCommand(object):
