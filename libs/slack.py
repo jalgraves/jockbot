@@ -9,10 +9,10 @@ import inspect
 import sys
 import asyncio
 
-from time import sleep
+from socket import gaierror
 from threading import Thread
 
-from utils.BotTools import get_config, log_command
+from utils.helpers import get_config, log_command
 from utils.exceptions import JockBotException
 from utils.exceptions import NFLRequestException
 from utils.exceptions import NHLException
@@ -32,7 +32,7 @@ class Slack(object):
         """
         self.config = get_config('slack.json')
         self.client = slackclient.SlackClient(token)
-        self.commands = self.load_commands('/jalbot/src/commands/')
+        self.commands = self.load_commands('/jockbot/commands/')
 
     def post_message(self, channel, message):
         """
@@ -116,7 +116,11 @@ class Slack(object):
         Connect to Slack Real Time Messaging API
         :return:
         """
-        client = self.client.rtm_connect()
+        try:
+            client = self.client.rtm_connect()
+        except gaierror:
+            time.sleep(1)
+            client = self.client.rtm_connect()
         if client:
             logging.info('Connected to Slack')
             worker_loop = asyncio.new_event_loop()
@@ -138,8 +142,8 @@ class Slack(object):
                                 self.post_reaction("spinning", event["ts"], event["channel"])
                                 worker_loop.run_in_executor(None, self.handle_message, command, event)
                     except requests.exceptions.ConnectionError as err:
-                        logging.error(err)
-                        sleep(2)
+                        logging.error('Connection Error')
+                        time.sleep(2)
                         self.client.rtm_connect()
                         self.post_reaction("spinning", event["ts"], event["channel"])
                         worker_loop.run_in_executor(None, self.handle_message, command, event)

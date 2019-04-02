@@ -1,9 +1,8 @@
 import logging
 
-from utils.BotTools import get_config
+from utils.helpers import get_config
 from utils.slackparse import SlackArgParse
-from utils.exceptions import JalBotError
-
+from utils.exceptions import JockBotException
 
 class BotCommand(object):
     """Create Example object from Slack event"""

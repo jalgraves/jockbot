@@ -9,13 +9,19 @@ RUN apk add --no-cache -U tzdata
 RUN cp /usr/share/zoneinfo/UTC /etc/localtime
 RUN echo "UTC" >  /etc/timezone
 
-RUN pip install --upgrade pip
+# RUN pip install --upgrade pip
 RUN pip install --upgrade requests
 
-ADD . /jalbot/
+COPY ./requirements.txt requirements.txt
+RUN pip install -U -r requirements.txt
+COPY . /jockbot/
+#WORKDIR /jockbot/jockbot_nhl
+#RUN python setup.py sdist bdist_wheel && pip install .
+#WORKDIR /jockbot/jockbot_mlb
+#RUN python setup.py sdist bdist_wheel && pip install .
+#RUN cp jockbot_mlb/config.json /usr/local/lib/python3.7/site-packages/jockbot_mlb/config.json
 
-WORKDIR /jalbot
+WORKDIR /jockbot
 RUN mkdir log
-RUN pip install -r /jalbot/requirements.txt
 
-ENTRYPOINT ["python", "/jalbot/src/main.py"]
+ENTRYPOINT ["python", "/jockbot/jockbot.py"]

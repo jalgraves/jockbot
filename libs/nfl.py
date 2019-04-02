@@ -9,7 +9,7 @@ import requests
 import socket
 import time
 
-from utils.BotTools import get_config
+from utils.helpers import get_config
 from utils.exceptions import NFLRequestException
 
 

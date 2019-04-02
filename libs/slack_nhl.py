@@ -1,12 +1,10 @@
 import datetime
 import logging
-import redis
 
-from libs.nhl import NHL
-from libs.nhl import NHLTeam
-from libs.nhl import NHLLeague
-from libs.nhl import NHLPlayer
-from utils.BotTools import get_config
+from jockbot_nhl import NHL
+from jockbot_nhl import NHLTeam
+
+from utils.helpers import get_config
 from utils.exceptions import NHLException
 
 
@@ -14,7 +12,7 @@ class SlackNHL:
     """
     Create a Slack response object`
     """
-    def __init__(self, args, option, team=None, player=None):
+    def __init__(self, args, option=None, team=None, player=None):
         self.args = args
         self.option = option
         self.team = team
@@ -52,7 +50,7 @@ class SlackNHL:
         if not self.team:
             reply = self.nhl_league_schedule()
         else:
-            reply = self.nhl_schedule()
+            reply = self.nhl_team_schedule()
         return reply
 
     def nhl_stats_reply(self):
@@ -161,23 +159,9 @@ class SlackNHL:
         """
         Return slack reply with NHL stats
         """
-        team = NHLTeam(self.team)
-        nhl_players = redis.StrictRedis(host='jal_redis.backend', port=6379, db=0)
-        emoji = self.emojis.get(str(self.team))
-        roster = team.roster
-        team_stats = team.stats
-        reply = [f":{emoji}: *{team_stats['name']} Roster*"]
-        for i in range(len(roster)):
-            player = roster[i]['person']
-            nhl_players.set(player['fullName'], player['id'])
-            player_info = [
-                f"*{player['fullName']} {roster[i]['jerseyNumber']}*",
-                f">*Position: `{roster[i]['position']['name']}`*"
-            ]
-            reply.append("\n".join(player_info))
-        return "\n".join(reply)
+        pass
 
-    def nhl_schedule(self, title=True, limit=None, type=None):
+    def nhl_team_schedule(self, title=True, limit=None, type=None):
         """Format slack reply"""
         team = NHLTeam(self.team)
         games = team.unplayed_games
@@ -221,58 +205,76 @@ class SlackNHL:
         else:
             reply = [f":nhl: *Games on {date}*"]
 
-        for i in range(len(games)):
-            away_team = games[i]['teams']['away']['team']['name']
-            away_record = games[i]['teams']['away']['leagueRecord']
-            home_team = games[i]['teams']['home']['team']['name']
-            home_record = games[i]['teams']['home']['leagueRecord']
+        for game in games:
+            away_team = game['teams']['away']['team']['name']
+            away_record = game['teams']['away']['leagueRecord']
+            home_team = game['teams']['home']['team']['name']
+            home_record = game['teams']['home']['leagueRecord']
             if 'Canadiens' in away_team:
                 away_team = 'Montreal Canadiens'
             elif 'Canadiens' in home_team:
                 home_team = 'Montreal Canadiens'
             away_emoji = self.emojis.get(away_team.lower())
             home_emoji = self.emojis.get(home_team.lower())
-            game_message = [
-                f">*:{away_emoji}: {away_team} `{away_record['wins']}-{away_record['losses']}-{away_record['ot']}`*",
-                f">*:{home_emoji}: {home_team} `{home_record['wins']}-{home_record['losses']}-{home_record['ot']}`*\n"
-            ]
-            reply.append("\n".join(game_message))
+            away_record = f"{away_record['wins']}–{away_record['losses']}–{away_record['ot']}"
+            if len(away_record) == 7:
+                away_record = f"{away_record} "
+            home_record = f"{home_record['wins']}–{home_record['losses']}–{home_record['ot']}"
+            message = f">:{away_emoji}: *`{away_record}`*  *@*  :{home_emoji}: *`{home_record}`*"
+            reply.append(message)
         return "\n".join(reply)
 
+    def _recent_game_reply(self, game):
+        away_team = game['away_team']['name']
+        home_team = game['home_team']['name']
+        if 'Canadiens' in away_team:
+            away_team = 'Montreal Canadiens'
+        elif 'Canadiens' in home_team:
+            home_team = 'Montreal Canadiens'
+        away_score = game['away_team']['score']
+        away_emoji = self.emojis.get(away_team.lower())
+        home_score = game['home_team']['score']
+        home_emoji = self.emojis.get(home_team.lower())
+        message = f">:{away_emoji}: *`{away_score}`*  *@*  :{home_emoji}: *`{home_score}`*"
+        return message
+
+    def _live_game_reply(self, game):
+        away_team = game['away_team']['name']
+        home_team = game['home_team']['name']
+        if 'Canadiens' in away_team:
+            away_team = 'Montreal Canadiens'
+        elif 'Canadiens' in home_team:
+            home_team = 'Montreal Canadiens'
+        away_score = game['away_team']['score']
+        away_emoji = self.emojis.get(away_team.lower())
+        home_score = game['home_team']['score']
+        home_emoji = self.emojis.get(home_team.lower())
+        time_left = game['time_left']
+        period = game['current_period']
+        game_message = [
+            f"*{time_left} in {period} period*",
+            f">:{away_emoji}: *{away_team}:* *`{away_score}`*",
+            f">:{home_emoji}: *{home_team}:* *`{home_score}`*\n"
+        ]
+        return "\n".join(game_message)
+
     def nhl_league_scores(self):
-        nhl = NHLLeague()
-        if not nhl.live_scores and not nhl.recent_scores:
-            return f":nhl: *_No recent scores*_"
-        if not nhl.live_scores:
-            games = nhl.recent_scores
+        nhl = NHL()
+        recent_games = nhl.recent_scores
+        live_games = nhl.live_scores
+        reply = []
+        if live_games:
+            reply.append(":nhl: *Recent Scores*")
+            for game in live_games:
+                reply.append(self._live_game_reply(game))
+        if recent_games:
+            date = self._format_date(recent_games[0]['date'])
+            reply.append(f":nhl: *{date} Scores*")
+            for game in recent_games:
+                reply.append(self._recent_game_reply(game))
         else:
-            games = nhl.live_scores
-        game_date = self._format_date(games[0]['date'])
-        reply = [f":nhl: *Recent Scores*\n*{game_date}*"]
-        for i in range(len(games)):
-            date = self._format_date(games[i]['date'])
-            away_team = games[i]['away_team']['name']
-            home_team = games[i]['home_team']['name']
-            if 'Canadiens' in away_team:
-                away_team = 'Montreal Canadiens'
-            elif 'Canadiens' in home_team:
-                home_team = 'Montreal Canadiens'
-            away_score = games[i]['away_team']['score']
-            away_emoji = self.emojis.get(away_team.lower())
-            home_score = games[i]['home_team']['score']
-            home_emoji = self.emojis.get(home_team.lower())
-            if date != game_date:
-                game_message = [
-                    f"*{date}*",
-                    f">:{away_emoji}: *{away_team}:* *`{away_score}`*",
-                    f">:{home_emoji}: *{home_team}:* *`{home_score}`*\n"
-                ]
-            else:
-                game_message = [
-                    f">:{away_emoji}: *{away_team}:* *`{away_score}`*",
-                    f">:{home_emoji}: *{home_team}:* *`{home_score}`*\n"
-                ]
-            reply.append("\n".join(game_message))
+            reply.append(":nhl: *No Games Yesterday*")
+        reply.append(self.nhl_league_schedule())
         return "\n".join(reply)
 
     def nhl_team_scores(self, title=True, limit=None):

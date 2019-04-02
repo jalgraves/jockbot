@@ -1,7 +1,7 @@
 import re
 import logging
 
-from utils.exceptions import JalBotError
+from utils.exceptions import JockBotException
 
 
 class SlackArgParse:
@@ -46,11 +46,11 @@ class SlackArgParse:
         """Get option from text"""
         option_fetch = re.match(r'[\w]*? ([a-z]+?)($|\s-.*)', text)
         if not option_fetch:
-            return None
+            return
         option = option_fetch.groups()[0]
         # option = text.split(' ', 1)[1]
         if option not in command_options:
-            raise JalBotError(f'Invalid Option {option}')
+            raise JockBotException(f'Invalid Option {option}')
         return option
 
     @staticmethod

@@ -2,10 +2,9 @@ slackclient
 nose
 coverage
 requests
-requests-mock
 bs4
-redis
 aiohttp
 pytz
-pymemcache
+jal-nba
 jockbot-nhl
+jockbot-mlb
